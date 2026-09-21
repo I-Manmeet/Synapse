@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse Intelligence Console</title>
+<style>
+  :root{
+    --paper:#F5EFE3;--paper-2:#EFE7D6;--surface:#FFFDF7;
+    --ink:#1E1B16;--ink-soft:#4A4438;--muted:#8A8172;
+    --line:#E2D8C4;--line-strong:#D3C6AC;
+    --brand:#15564A;--brand-soft:#E3ECE7;--accent:#B4531C;
+    --low:#2F7A55;--low-bg:#E7F1EA;--med:#C07714;--med-bg:#F8EEDC;
+    --high:#B23A2E;--high-bg:#F6E3DF;--na:#9A9384;--na-bg:#EBE5D8;
+    --shadow:0 18px 40px -22px rgba(38,32,20,.45);
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    padding:0 clamp(18px,5vw,64px) 72px;
+    background-image:radial-gradient(circle at 12% 8%,rgba(21,86,74,.05),transparent 40%),
+                     radial-gradient(circle at 88% 4%,rgba(180,83,28,.05),transparent 38%);}
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header.masthead{padding:40px 0 24px;border-bottom:2px solid var(--ink);margin-bottom:4px;}
+  .kicker{font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--brand);font-weight:700;}
+  .masthead h1{font-family:var(--serif);font-size:clamp(42px,7vw,80px);line-height:.94;
+    letter-spacing:-.02em;margin:10px 0 8px;font-weight:700;}
+  .masthead h1 .glyph{color:var(--accent);}
+  .masthead .dek{font-family:var(--serif);font-style:italic;font-size:clamp(15px,2.2vw,19px);
+    color:var(--ink-soft);max-width:640px;}
+  .meta-row{display:flex;flex-wrap:wrap;gap:22px;margin-top:18px;font-size:12px;letter-spacing:.04em;
+    color:var(--muted);text-transform:uppercase;}
+  .meta-row b{color:var(--ink);font-weight:700;}
+
+  .view{display:none;}
+  .view.active{display:block;animation:fade .4s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* ---------- START VIEW ---------- */
+  .start-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:30px;}
+  .start-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;
+    padding:26px 28px;box-shadow:var(--shadow);}
+  .start-card h3{font-family:var(--serif);font-size:20px;margin-bottom:4px;}
+  .start-card .sub{font-size:12.5px;color:var(--muted);margin-bottom:18px;}
+  .dropzone{border:2px dashed var(--line-strong);border-radius:10px;padding:30px 20px;text-align:center;
+    cursor:pointer;transition:.18s;background:var(--paper);}
+  .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--brand-soft);}
+  .dropzone .ic{font-size:30px;}
+  .dropzone .t{font-weight:700;margin-top:8px;font-size:14px;}
+  .dropzone .h{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .files{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .filechip{display:flex;align-items:center;gap:10px;background:var(--paper-2);border-radius:7px;
+    padding:8px 12px;font-size:13px;}
+  .filechip .x{margin-left:auto;cursor:pointer;color:var(--muted);border:none;background:none;font-size:15px;}
+  .filechip .dot{width:8px;height:8px;border-radius:50%;background:var(--low);}
+  textarea{width:100%;min-height:120px;resize:vertical;font-family:var(--serif);font-size:16px;
+    line-height:1.45;padding:14px 16px;border:1px solid var(--line-strong);border-radius:9px;
+    background:var(--paper);color:var(--ink);}
+  textarea:focus{outline:2px solid var(--brand);outline-offset:1px;}
+  .ex{margin-top:12px;font-size:12px;color:var(--muted);}
+  .ex button{background:none;border:none;color:var(--brand);font-weight:700;cursor:pointer;
+    font-size:12px;text-decoration:underline;font-family:var(--sans);}
+  .analyze{margin-top:20px;width:100%;background:var(--brand);color:#fff;border:none;border-radius:9px;
+    padding:15px;font-size:15px;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:.18s;
+    font-family:var(--sans);}
+  .analyze:hover{background:#0f4238;transform:translateY(-1px);}
+  .analyze:disabled{background:var(--line-strong);cursor:not-allowed;transform:none;}
+  .flowmini{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+    font-size:12px;color:var(--muted);letter-spacing:.05em;margin-top:6px;text-transform:uppercase;}
+  .flowmini b{color:var(--ink-soft);}
+
+  /* ---------- RUN VIEW ---------- */
+  .run-wrap{text-align:center;padding:20px 0 10px;}
+  .run-q{font-family:var(--serif);font-size:clamp(18px,3vw,24px);color:var(--ink);max-width:720px;
+    margin:0 auto 6px;line-height:1.3;}
+  .run-cap{font-size:13.5px;color:var(--brand);font-weight:700;letter-spacing:.06em;min-height:20px;margin-bottom:22px;}
+  .prog{max-width:520px;margin:0 auto 30px;height:6px;background:var(--paper-2);border-radius:4px;overflow:hidden;}
+  .prog-fill{height:100%;background:var(--brand);width:0;transition:width .5s ease;border-radius:4px;}
+  .run-agents{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;max-width:860px;margin:0 auto;}
+  .rag{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 10px;text-align:center;
+    transition:.25s;}
+  .rag .e{font-size:22px;}
+  .rag .n{font-weight:700;font-size:12.5px;margin-top:7px;}
+  .rag .dot{width:8px;height:8px;border-radius:50%;background:var(--line-strong);margin:9px auto 0;transition:.2s;}
+  .rag.running{border-color:var(--med);box-shadow:0 6px 16px rgba(192,119,20,.2);}
+  .rag.running .dot{background:var(--med);animation:pulse 1s infinite;}
+  .rag.done{border-color:var(--low);}
+  .rag.done .dot{background:var(--low);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  /* ---------- RESULT VIEW ---------- */
+  .prompt{background:var(--surface);border:1px solid var(--line-strong);border-left:5px solid var(--accent);
+    border-radius:4px;padding:18px 22px;margin:26px 0 8px;display:flex;gap:16px;align-items:flex-start;}
+  .prompt .tag{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+    font-weight:700;white-space:nowrap;padding-top:3px;}
+  .prompt p{font-family:var(--serif);font-size:clamp(17px,2.6vw,22px);line-height:1.35;}
+  .redo{margin-left:auto;background:var(--paper-2);border:1px solid var(--line-strong);border-radius:7px;
+    padding:6px 12px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+    cursor:pointer;color:var(--ink-soft);white-space:nowrap;font-family:var(--sans);}
+  .redo:hover{background:var(--line-strong);}
+  .sec-label{display:flex;align-items:center;gap:14px;margin:40px 0 18px;}
+  .sec-label span{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);
+    font-weight:700;white-space:nowrap;}
+  .sec-label:after{content:"";height:1px;background:var(--line-strong);flex:1;}
+  .tier-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin:0 0 12px 2px;}
+  .specialists{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+  .flow-arrow{text-align:center;color:var(--line-strong);font-size:20px;margin:14px 0 10px;letter-spacing:.5em;}
+  .converge{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;max-width:560px;margin:0 auto;}
+  .card{position:relative;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--line);
+    border-radius:10px;padding:18px 18px 16px;transition:.18s;font-family:var(--sans);width:100%;color:inherit;}
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--brand);}
+  .card:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+  .card .top{display:flex;align-items:center;justify-content:space-between;}
+  .card .emoji{font-size:22px;line-height:1;}
+  .card .idx{font-family:var(--serif);font-size:13px;color:var(--muted);font-weight:700;}
+  .card .name{font-weight:700;font-size:16px;margin-top:12px;}
+  .card .role{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+  .card .peek{font-size:13px;color:var(--ink-soft);margin-top:11px;display:-webkit-box;-webkit-line-clamp:2;
+    -webkit-box-orient:vertical;overflow:hidden;line-height:1.4;}
+  .card .open{margin-top:13px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);
+    font-weight:700;display:flex;align-items:center;gap:6px;}
+  .card .open .arw{transition:.18s;}
+  .card:hover .open .arw{transform:translateX(4px);}
+  .card.risk{border-top:3px solid var(--accent);}
+  .card.strategy{border-top:3px solid var(--brand);background:linear-gradient(180deg,var(--brand-soft),var(--surface) 42%);}
+  .feature-grid{display:grid;grid-template-columns:minmax(0,0.92fr) minmax(0,1.08fr);gap:20px;}
+  .panel{background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:24px 26px;
+    box-shadow:var(--shadow);min-width:0;}
+  .panel h3{font-family:var(--serif);font-size:20px;margin-bottom:4px;display:flex;align-items:center;gap:9px;}
+  .panel .sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+  .rk{display:flex;align-items:center;gap:12px;margin:13px 0;}
+  .rk-label{width:96px;font-size:13px;font-weight:700;color:var(--ink-soft);flex-shrink:0;}
+  .rk-track{flex:1;height:14px;background:var(--paper-2);border-radius:7px;overflow:hidden;min-width:0;}
+  .rk-fill{height:100%;border-radius:7px;width:0;transition:width .9s cubic-bezier(.22,.9,.3,1);}
+  .rk-chip{width:66px;text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:3px 0;
+    border-radius:5px;flex-shrink:0;}
+  .lv-low .rk-fill{background:var(--low);}.lv-low .rk-chip{color:var(--low);background:var(--low-bg);}
+  .lv-med .rk-fill{background:var(--med);}.lv-med .rk-chip{color:var(--med);background:var(--med-bg);}
+  .lv-high .rk-fill{background:var(--high);}.lv-high .rk-chip{color:var(--high);background:var(--high-bg);}
+  .lv-na .rk-fill{background:repeating-linear-gradient(45deg,var(--na) 0 5px,transparent 5px 10px);}
+  .lv-na .rk-chip{color:var(--na);background:var(--na-bg);}
+  .overall{display:flex;align-items:baseline;gap:10px;margin-top:20px;padding-top:16px;border-top:1px dashed var(--line-strong);}
+  .overall .v{font-family:var(--serif);font-size:26px;color:var(--high);font-weight:700;}
+  .overall .l{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+  .rec .bl{font-family:var(--serif);font-size:18px;line-height:1.42;margin-bottom:18px;}
+  .rec .actions{list-style:none;counter-reset:a;}
+  .rec .actions li{counter-increment:a;position:relative;padding:11px 0 11px 40px;border-top:1px solid var(--line);
+    font-size:14.5px;color:var(--ink-soft);}
+  .rec .actions li:before{content:counter(a);position:absolute;left:0;top:11px;width:24px;height:24px;
+    border-radius:50%;background:var(--brand);color:#fff;font-family:var(--serif);font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;}
+  .caveat{margin-top:18px;padding:14px 16px;background:var(--high-bg);border-radius:8px;font-size:13.5px;
+    color:#7a2820;line-height:1.45;}
+  .caveat b{letter-spacing:.06em;text-transform:uppercase;font-size:11px;display:block;margin-bottom:3px;color:var(--high);}
+
+  .overlay{position:fixed;inset:0;background:rgba(30,27,22,.5);backdrop-filter:blur(3px);display:flex;
+    align-items:center;justify-content:center;padding:24px;z-index:50;opacity:0;pointer-events:none;transition:.22s;}
+  .overlay.on{opacity:1;pointer-events:auto;}
+  .modal{background:var(--surface);border-radius:14px;max-width:600px;width:100%;max-height:86vh;overflow:auto;
+    box-shadow:0 30px 70px -20px rgba(20,15,8,.6);transform:translateY(14px) scale(.98);transition:.24s;
+    border:1px solid var(--line-strong);}
+  .overlay.on .modal{transform:none;}
+  .modal-head{padding:26px 30px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:flex-start;
+    position:sticky;top:0;background:var(--surface);}
+  .modal-head .emoji{font-size:34px;}
+  .modal-head .name{font-family:var(--serif);font-size:26px;}
+  .modal-head .role{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .modal-head .did{font-size:13px;color:var(--ink-soft);margin-top:8px;font-style:italic;}
+  .modal-close{margin-left:auto;background:var(--paper-2);border:none;cursor:pointer;width:32px;height:32px;
+    border-radius:50%;font-size:17px;color:var(--ink-soft);flex-shrink:0;}
+  .modal-close:hover{background:var(--line-strong);}
+  .modal-body{padding:22px 30px 30px;}
+  .modal-body .out-label{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);
+    font-weight:700;margin-bottom:12px;}
+  .modal-body ul{list-style:none;}
+  .modal-body li{position:relative;padding:9px 0 9px 20px;font-size:14.5px;color:var(--ink-soft);
+    border-bottom:1px solid var(--line);line-height:1.45;}
+  .modal-body li:last-child{border-bottom:none;}
+  .modal-body li:before{content:"";position:absolute;left:0;top:16px;width:7px;height:7px;border-radius:2px;background:var(--accent);}
+  .modal-body li b{color:var(--ink);}
+
+  footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.6;}
+  footer b{color:var(--ink-soft);}
+  code{background:var(--paper-2);padding:1px 5px;border-radius:4px;font-size:11.5px;}
+
+  @media (max-width:820px){
+    .start-grid,.feature-grid{grid-template-columns:minmax(0,1fr);}
+    .specialists{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .run-agents{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">Multi-Agent Business Intelligence</div>
+    <h1>Synapse<span class="glyph">.</span></h1>
+    <p class="dek">Upload your data, ask the question — six specialist agents analyze it, weigh the risk, and return one decision.</p>
+  </header>
+
+  <!-- ============ VIEW 1: START ============ -->
+  <section class="view active" id="view-start">
+    <div class="start-grid">
+      <div class="start-card">
+        <h3>1 · Add your data</h3>
+        <div class="sub">PDF, Excel, CSV — bills, reports, reviews, sales</div>
+        <div class="dropzone" id="dropzone">
+          <div class="ic">📂</div>
+          <div class="t">Drop files or click to upload</div>
+          <div class="h">Read and passed to the agents via RAG</div>
+        </div>
+        <input type="file" id="fileInput" multiple hidden>
+        <div class="files" id="files"></div>
+      </div>
+      <div class="start-card">
+        <h3>2 · Ask your question</h3>
+        <div class="sub">A real business decision you need help with</div>
+        <textarea id="question" placeholder="e.g. Sales dropped 20% last quarter. Should we cut prices or run a limited-time promotion?"></textarea>
+        <div class="ex">No data handy? <button id="useExample">Load the example scenario →</button></div>
+        <button class="analyze" id="analyzeBtn">Analyze with 6 agents</button>
+      </div>
+      <div class="flowmini">
+        <b>Analytics</b> · <b>Finance</b> · <b>Market</b> · <b>Customer</b> &nbsp;→&nbsp; <b>Risk</b> &nbsp;→&nbsp; <b>Strategy</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 2: RUN ============ -->
+  <section class="view" id="view-run">
+    <div class="run-wrap">
+      <p class="run-q" id="runQ"></p>
+      <div class="run-cap" id="runCap">Starting analysis…</div>
+      <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+      <div class="run-agents" id="runAgents"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 3: RESULT ============ -->
+  <section class="view" id="view-result">
+    <div class="prompt">
+      <div class="tag">Question</div>
+      <p id="resQ"></p>
+      <button class="redo" id="redoBtn">↺ New analysis</button>
+    </div>
+
+    <div class="sec-label"><span>The Pipeline · click any agent to see what it did</span></div>
+    <div class="tier-label">Specialists — analyzed in parallel</div>
+    <div class="specialists" id="specialists"></div>
+    <div class="flow-arrow">↓ ↓ ↓ ↓</div>
+    <div class="tier-label" style="text-align:center;">Risk — read every finding</div>
+    <div class="converge" id="risk-tier"></div>
+    <div class="flow-arrow">↓</div>
+    <div class="tier-label" style="text-align:center;">Strategy — the final call</div>
+    <div class="converge" id="strategy-tier"></div>
+
+    <div class="sec-label"><span>The Verdict</span></div>
+    <div class="feature-grid">
+      <div class="panel">
+        <h3>⚠️ Risk Profile</h3>
+        <div class="sub">Rated by the Risk agent, grounded only in the findings</div>
+        <div id="risk-chart"></div>
+        <div class="overall"><span class="v">Elevated</span><span class="l">Overall — driven by competition</span></div>
+      </div>
+      <div class="panel rec">
+        <h3>🎯 Recommendation</h3>
+        <div class="sub">Synthesized by the Strategy agent</div>
+        <p class="bl" id="rec-bl"></p>
+        <ol class="actions" id="rec-actions"></ol>
+        <div class="caveat"><b>Biggest caveat</b><span id="rec-caveat"></span></div>
+      </div>
+    </div>
+
+    <footer>
+      <b>Prototype front end</b> — one page, three states (Start → Analyzing → Result), plain HTML/CSS/JS.
+      The analysis is <b>simulated</b> here with a baked-in scenario. To go live, POST the question + files to your
+      Python backend, run the orchestrator, and drop its response into the <code>DATA</code>, <code>RISK_SCORES</code>,
+      and <code>REC</code> objects — the whole page rebuilds from those.
+    </footer>
+  </section>
+</div>
+
+<!-- modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-name">
+    <div class="modal-head">
+      <div class="emoji" id="m-emoji"></div>
+      <div><div class="name" id="m-name"></div><div class="role" id="m-role"></div><div class="did" id="m-did"></div></div>
+      <button class="modal-close" id="m-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="out-label">What this agent returned</div>
+      <ul id="m-body"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DATA (swap for orchestrator output when live) ================= */
+const DATA = {
+  Analytics:{emoji:"📊",role:"Data Analyst",did:"Reads the sales data and surfaces the trend behind the drop.",
+    peek:"Sales down 20% QoQ, mostly the premium line; weekday sales falling.",
+    out:["Sales down <b>20% quarter-over-quarter</b>, concentrated in the premium line.","Budget items held steady on volume.","Weekend traffic flat; decline is driven by <b>falling weekday sales</b>."]},
+  Finance:{emoji:"💰",role:"CFO",did:"Runs the margin and cash math on each option.",
+    peek:"Margin 42%; a 15% cut drops it to ~31%. Promo protects list price.",
+    out:["Gross margin is <b>42%</b>.","A 15% price cut would drop margin to <b>~31%</b>.","A time-boxed promo costs less and <b>protects the list price</b>.","Cash runway is <b>7 months</b>."]},
+  Market:{emoji:"🔍",role:"Market Research",did:"Scans competitors and category pricing trends.",
+    peek:"Two competitors launched cheaper alternatives; pricing trending down.",
+    out:["Two competitors <b>launched cheaper alternatives</b> last quarter.","Category pricing is <b>trending down</b>.","Brand loyalty in our segment remains <b>moderate</b>."]},
+  Customer:{emoji:"👥",role:"Customer Intelligence",did:"Reads review sentiment and buying behavior.",
+    peek:"Reviews cite price sensitivity, but quality satisfaction stays high (4.3/5).",
+    out:["Reviews cite <b>“too expensive lately”</b> and <b>“found a cheaper option.”</b>","Quality satisfaction stays <b>high (4.3/5)</b>.","Signals price sensitivity, not quality dissatisfaction."]},
+  Risk:{emoji:"⚠️",role:"Risk Manager",did:"Rates each risk category from the findings — and flags where there's no data.",
+    peek:"Competition HIGH; Financial, Market, Customer MEDIUM; Operational — no data.",
+    out:["<b>Financial — MEDIUM:</b> price cuts push margin from 42% to 31%.","<b>Market — MEDIUM:</b> cheaper alternatives, pricing down, loyalty moderate.","<b>Operational — INSUFFICIENT DATA:</b> no operational or capacity issues mentioned.","<b>Customer — MEDIUM:</b> price sensitivity, but quality satisfaction high.","<b>Competition — HIGH:</b> new cheaper rivals likely driving the sales drop.","<b>Mitigations:</b> run a limited-time promotion, monitor competitor pricing, reinforce quality differentiation."]},
+  Strategy:{emoji:"🎯",role:"Decision Support",did:"Turns every finding into one recommendation.",
+    peek:"Run a limited-time promotion over a price cut — protect margin, avoid a price war.",
+    out:["<b>Bottom line:</b> Run a limited-time promotion rather than cutting prices — it fights the drop while protecting margin and avoiding a price war.","<b>Action 1:</b> Time-boxed promotion on the premium line to lift weekday sales without lowering the base price.","<b>Action 2:</b> Signal it's temporary so price expectations don't reset.","<b>Action 3:</b> Watch competitors and adjust fast.","<b>Caveat:</b> the HIGH price-war risk means the promotion must be managed carefully."]}
+};
+const RISK_SCORES=[["Financial","MEDIUM"],["Market","MEDIUM"],["Operational","N/A"],["Customer","MEDIUM"],["Competition","HIGH"]];
+const LEVELS={LOW:{w:33,c:"lv-low",t:"LOW"},MEDIUM:{w:66,c:"lv-med",t:"MEDIUM"},HIGH:{w:100,c:"lv-high",t:"HIGH"},"N/A":{w:100,c:"lv-na",t:"NO DATA"}};
+const REC={
+  bl:"Run a limited-time promotion rather than cutting prices. It combats the sales drop while protecting margins and avoids a damaging price war; a price cut risks permanent margin loss and escalating competitor cuts.",
+  actions:["Launch a targeted, time-boxed promotion on the premium line to stimulate weekday sales without lowering the base price.","Communicate clearly that the promotion is temporary, to protect brand value and keep price expectations intact.","Monitor competitor responses closely and adjust promotional tactics quickly."],
+  caveat:"The high risk of a competitor price war means the promotion must be carefully managed to avoid triggering aggressive long-term price cuts."};
+const EXAMPLE_Q="Sales dropped 20% last quarter. Should we cut prices or run a limited-time promotion?";
+const ORDER=["Analytics","Finance","Market","Customer","Risk","Strategy"];
+const IDX={Analytics:"01",Finance:"02",Market:"03",Customer:"04",Risk:"05",Strategy:"06"};
+
+/* ================= view switching ================= */
+function showView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ================= START: files + question ================= */
+const fileInput=document.getElementById("fileInput"),dropzone=document.getElementById("dropzone"),
+  filesBox=document.getElementById("files"),question=document.getElementById("question");
+let uploaded=[];
+function renderFiles(){
+  filesBox.innerHTML=uploaded.map((f,i)=>`<div class="filechip"><span class="dot"></span>${f}
+    <button class="x" data-i="${i}" aria-label="Remove">✕</button></div>`).join("");
+  filesBox.querySelectorAll(".x").forEach(b=>b.onclick=()=>{uploaded.splice(+b.dataset.i,1);renderFiles();});
+}
+dropzone.onclick=()=>fileInput.click();
+fileInput.onchange=e=>{[...e.target.files].forEach(f=>uploaded.push(f.name));renderFiles();};
+["dragover","dragenter"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove("drag");}));
+dropzone.addEventListener("drop",e=>{[...e.dataTransfer.files].forEach(f=>uploaded.push(f.name));renderFiles();});
+document.getElementById("useExample").onclick=()=>{
+  question.value=EXAMPLE_Q;
+  if(!uploaded.length){uploaded=["sales.csv","expenses.csv","customer_reviews.pdf","market_report.pdf"];renderFiles();}
+};
+document.getElementById("analyzeBtn").onclick=()=>{
+  const q=question.value.trim()||EXAMPLE_Q;
+  runFlow(q);
+};
+
+/* ================= RUN: animate the pipeline ================= */
+const runAgents=document.getElementById("runAgents");
+runAgents.innerHTML=ORDER.map(k=>`<div class="rag" data-k="${k}"><div class="e">${DATA[k].emoji}</div>
+  <div class="n">${k}</div><div class="dot"></div></div>`).join("");
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function setStat(k,s){const el=runAgents.querySelector(`[data-k="${k}"]`);el.classList.remove("running","done");if(s)el.classList.add(s);}
+function prog(n){document.getElementById("progFill").style.width=Math.round(n/6*100)+"%";}
+const cap=t=>document.getElementById("runCap").textContent=t;
+
+async function runFlow(q){
+  document.getElementById("runQ").textContent=q;
+  ORDER.forEach(k=>setStat(k,null));prog(0);cap("Manager agent routing the question…");
+  showView("view-run");
+  await wait(700);
+  ["Analytics","Finance","Market","Customer"].forEach(k=>setStat(k,"running"));
+  cap("Four specialists analyzing in parallel…");
+  await wait(1500);
+  let done=0;
+  for(const k of ["Analytics","Finance","Market","Customer"]){setStat(k,"done");prog(++done);await wait(220);}
+  setStat("Risk","running");cap("Risk agent weighing every finding…");await wait(1400);
+  setStat("Risk","done");prog(5);await wait(300);
+  setStat("Strategy","running");cap("Strategy agent forming the recommendation…");await wait(1400);
+  setStat("Strategy","done");prog(6);cap("Done.");await wait(600);
+  buildResult(q);showView("view-result");
+}
+
+/* ================= RESULT ================= */
+function cardHTML(key){
+  const a=DATA[key],cls=key==="Risk"?" risk":key==="Strategy"?" strategy":"";
+  return `<button class="card${cls}" data-agent="${key}">
+    <div class="top"><span class="emoji">${a.emoji}</span><span class="idx">${IDX[key]}</span></div>
+    <div class="name">${key}</div><div class="role">${a.role}</div>
+    <div class="peek">${a.peek}</div>
+    <div class="open">See what it did <span class="arw">→</span></div></button>`;
+}
+function buildResult(q){
+  document.getElementById("resQ").textContent=q;
+  document.getElementById("specialists").innerHTML=["Analytics","Finance","Market","Customer"].map(cardHTML).join("");
+  document.getElementById("risk-tier").innerHTML=cardHTML("Risk");
+  document.getElementById("strategy-tier").innerHTML=cardHTML("Strategy");
+  document.getElementById("risk-chart").innerHTML=RISK_SCORES.map(([cat,lvl])=>{
+    const L=LEVELS[lvl];
+    return `<div class="rk ${L.c}"><span class="rk-label">${cat}</span>
+      <div class="rk-track"><div class="rk-fill" data-w="${L.w}"></div></div>
+      <span class="rk-chip">${L.t}</span></div>`;}).join("");
+  document.getElementById("rec-bl").textContent=REC.bl;
+  document.getElementById("rec-actions").innerHTML=REC.actions.map(a=>`<li>${a}</li>`).join("");
+  document.getElementById("rec-caveat").textContent=REC.caveat;
+  document.querySelectorAll(".card").forEach(c=>c.onclick=()=>openAgent(c.dataset.agent));
+  setTimeout(()=>document.querySelectorAll(".rk-fill").forEach(f=>f.style.width=f.dataset.w+"%"),150);
+}
+document.getElementById("redoBtn").onclick=()=>showView("view-start");
+
+/* ================= modal ================= */
+const overlay=document.getElementById("overlay");
+function openAgent(key){
+  const a=DATA[key];
+  document.getElementById("m-emoji").textContent=a.emoji;
+  document.getElementById("m-name").textContent=key;
+  document.getElementById("m-role").textContent=a.role;
+  document.getElementById("m-did").textContent=a.did;
+  document.getElementById("m-body").innerHTML=a.out.map(o=>`<li>${o}</li>`).join("");
+  overlay.classList.add("on");
+}
+document.getElementById("m-close").onclick=()=>overlay.classList.remove("on");
+overlay.onclick=e=>{if(e.target===overlay)overlay.classList.remove("on");};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")overlay.classList.remove("on");});
+</script>
+</body>
+</html>
