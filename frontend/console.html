@@ -125,6 +125,9 @@
     <div class="kicker">Multi-Agent Business Intelligence</div>
     <h1>Synapse<span>.</span></h1>
     <p class="dek">Upload your data, ask the question — the agents analyze it, weigh the risk, and return one business report.</p>
+    <p id="businessWorkspace" style="font-size:12px;color:var(--muted);margin-top:10px;">
+      Creating business workspace...
+    </p>
   </header>
   <section class="view active" id="view-start">
     <div class="start-grid">
@@ -159,6 +162,7 @@
   <section class="view" id="view-result">
     <div class="prompt">
       <div class="tag">Question</div><p id="resQ"></p>
+      <button class="redo" id="newBusinessBtn">＋ New business</button>
       <button class="redo" id="redoBtn">↺ New analysis</button>
     </div>
     <div class="sec-label"><span>The Pipeline · click any agent to see what it did</span></div>
@@ -220,6 +224,40 @@ const DEMO={
 function showView(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById(id).classList.add("active");scrollTo({top:0,behavior:"smooth"});}
 const fileInput=document.getElementById("fileInput"),dropzone=document.getElementById("dropzone"),filesBox=document.getElementById("files"),question=document.getElementById("question");
 let uploaded=[];
+let businessId = localStorage.getItem("business_id");
+
+async function createBusiness() {
+  if (businessId) return businessId;
+
+  const response = await fetch(API + "/create-business", {
+    method: "POST"
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not create business workspace");
+  }
+
+  const data = await response.json();
+  businessId = data.business_id;
+  localStorage.setItem("business_id", businessId);
+
+  return businessId;
+}
+
+async function showBusinessId() {
+  try {
+    const id = await createBusiness();
+    document.getElementById("businessWorkspace").textContent =
+      "Business Workspace: " + id;
+  } catch (error) {
+    document.getElementById("businessWorkspace").textContent =
+      "Business workspace unavailable";
+    console.error(error);
+  }
+}
+
+showBusinessId();
+
 function renderFiles(){
   filesBox.innerHTML=uploaded.map((f,i)=>`<div class="filechip"><span class="dot"></span>${f.name}<button class="x" data-i="${i}" aria-label="Remove">✕</button></div>`).join("");
   filesBox.querySelectorAll(".x").forEach(b=>b.onclick=()=>{uploaded.splice(+b.dataset.i,1);renderFiles();});
@@ -233,14 +271,57 @@ document.getElementById("useExample").onclick=()=>{question.value=EXAMPLE_Q;};
 document.getElementById("analyzeBtn").onclick=()=>runFlow(question.value.trim()||EXAMPLE_Q);
 async function fetchAnalysis(q){
   try{
-    for(const u of uploaded){ if(u.file){ const fd=new FormData(); fd.append("file",u.file); await fetch(API+"/upload",{method:"POST",body:fd}); } }
-    const r=await fetch(API+"/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,context:""})});
-    if(!r.ok) throw new Error(r.status);
-    const d=await r.json();
-    const findings={};
-    for(const name of ORDER) findings[name]=d[META[name].key]||"No output returned.";
-    return {question:q,findings,report:d.report||"No report returned."};
-  }catch(e){ console.warn("Backend unreachable — sample shown.",e); return null; }
+    const businessId = await createBusiness();
+
+    console.log("Business ID:", businessId);
+
+    for(const u of uploaded){
+      if(u.file){
+        const fd = new FormData();
+        fd.append("file", u.file);
+        fd.append("business_id", businessId);
+
+        const uploadResponse = await fetch(API + "/upload", {
+          method: "POST",
+          body: fd
+        });
+
+        if(!uploadResponse.ok){
+          throw new Error("File upload failed: " + uploadResponse.status);
+        }
+      }
+    }
+
+    const r = await fetch(API + "/analyze", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        business_id: businessId,
+        question: q,
+        context: ""
+      })
+    });
+
+    if(!r.ok) throw new Error("Analysis failed: " + r.status);
+
+    const d = await r.json();
+    const findings = {};
+
+    for(const name of ORDER){
+      findings[name] = d[META[name].key] || "No output returned.";
+    }
+
+    return {
+      question: q,
+      findings,
+      report: d.report || "No report returned.",
+      business_id: d.business_id || businessId
+    };
+
+  }catch(e){
+    console.warn("Backend unreachable — sample shown.",e);
+    return null;
+  }
 }
 const runAgents=document.getElementById("runAgents");
 runAgents.innerHTML=ORDER.map(k=>`<div class="rag" data-k="${k}"><div class="e">${META[k].emoji}</div><div class="n">${k}</div><div class="dot"></div></div>`).join("");
@@ -295,6 +376,12 @@ function buildResult(data){
   document.querySelectorAll(".card").forEach(c=>c.onclick=()=>openAgent(c.dataset.agent));
 }
 document.getElementById("redoBtn").onclick=()=>showView("view-start");
+
+document.getElementById("newBusinessBtn").onclick=()=>{
+  localStorage.removeItem("business_id");
+  businessId = null;
+  location.reload();
+};
 const overlay=document.getElementById("overlay");
 function openAgent(key){
   const a=META[key];

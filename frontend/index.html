@@ -161,7 +161,7 @@
     <div class="demo-cap" id="demoCap">Press play to watch the agents work through it.</div>
     <div class="steps" id="steps"></div>
   </div>
-  <p class="lead reveal" style="margin-top:16px;">The Manager only calls the agents a question actually needs — a simple "what was revenue last month?" uses Analytics alone; a complex decision triggers the full chain. That dynamic routing is what makes Synapse a real multi-agent system, not six separate tools.</p>
+  <p class="lead reveal" style="margin-top:16px;">Synapse sends the business question through its specialist agents — Analytics, Finance, Market, and Customer — then passes their findings to Risk and Strategy before the Manager produces one final report. This coordinated pipeline lets each agent focus on a different part of the business decision.</p>
   <div class="sec-label reveal"><span>The seven agents</span></div>
   <div class="agents" id="agents"></div>
   <div class="sec-label reveal"><span>How data flows</span></div>
@@ -226,11 +226,11 @@ const AGENTS=[
 document.getElementById("agents").innerHTML=AGENTS.map((a,i)=>`<div class="agent reveal ${a.mgr?'mgr':''}" style="transition-delay:${i*70}ms"><div class="e">${a.e}</div><div class="n">${a.n}</div><div class="r">${a.r}</div><div class="d">${a.d}</div></div>`).join("");
 const FLOW=[
   ["1","Upload","User uploads business files — CSVs, reports, reviews."],
-  ["2","Store","Files saved in the Foundry project, attached to the agents that need them."],
-  ["3","Ask","User types a plain-language question."],
-  ["4","Route","Manager sends it to the relevant specialists."],
-  ["5","Analyze","Each agent reads its data and returns structured findings."],
-  ["6","Synthesize","Strategy merges everything into one recommendation."],
+  ["2","Store","Files are stored in Azure Blob Storage under the business workspace."],
+  ["3","Index","Azure AI Search indexes the uploaded business documents."],
+  ["4","Ask","User types a plain-language question."],
+  ["5","Analyze","Specialist agents analyze only that business's data."],
+  ["6","Synthesize","Risk, Strategy and Manager combine the findings into one report."],
 ];
 document.getElementById("flow").innerHTML=FLOW.map(([n,t,s],i)=>`<div class="fstep reveal" style="transition-delay:${i*60}ms"><div class="num">${n}</div><div class="t">${t}</div><div class="s">${s}</div></div>`).join("");
 document.querySelectorAll(".agent.reveal,.fstep.reveal").forEach(el=>obs.observe(el));
