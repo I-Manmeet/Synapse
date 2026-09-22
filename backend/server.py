@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from orchestrator import run_analysis
+from agents.finance_agent import simulate
 
 
 # -----------------------------------
@@ -71,6 +72,10 @@ class AnalysisRequest(BaseModel):
     business_id: str
     question: str
     context: str = ""
+
+class SimulationRequest(BaseModel):
+    business_id: str
+    scenario: str
 
 
 # -----------------------------------
@@ -205,6 +210,25 @@ def analyze_business(request: AnalysisRequest):
 
     except Exception as e:
 
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@app.post("/simulate")
+def simulate_scenario(request: SimulationRequest):
+    try:
+        result = simulate(
+            scenario=request.scenario,
+            business_id=request.business_id
+        )
+        return {
+            "success": True,
+            "business_id": request.business_id,
+            "scenario": request.scenario,
+            "result": result
+        }
+    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=str(e)
