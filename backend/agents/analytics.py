@@ -1,10 +1,10 @@
 from foundary_client import project_client
-from business_context import BUSINESS_CONTEXT
+
 
 AGENT_NAME = "analytics-agent"
 
 
-def analyze(question: str, context: str = "") -> str:
+def analyze(question: str, context: str = "",business_id: str = "") -> str:
 
     openai = project_client.get_openai_client(
         agent_name=AGENT_NAME
@@ -16,18 +16,26 @@ You are being called by the Synapse Manager Agent.
 Business question:
 {question}
 
-COMMON BUSINESS CONTEXT:
-{BUSINESS_CONTEXT}
-
-Additional context:
+BUSINESS CONTEXT:
 {context}
 
-IMPORTANT:
-- Use the COMMON BUSINESS CONTEXT as the authoritative baseline.
-- If additional context conflicts with the common context,
-  do not silently choose one.
-- Clearly report the conflict.
-- Do not invent data.
+IMPORTANT EVIDENCE RULES:
+
+- The BUSINESS CONTEXT was prepared specifically for the
+  current business workspace.
+- The user-uploaded business files are the source of truth.
+- Do NOT use data from another business.
+- Do NOT assume the business is Synapse Clothing.
+- Do NOT use hardcoded business figures.
+- Do NOT invent revenue, expenses, customers, profits,
+  growth rates, or other metrics.
+- Use numerical values only when they are present in the
+  supplied business data or can be directly calculated from it.
+- If information from different sources conflicts, clearly
+  report the conflict instead of silently choosing one source.
+- Do not claim causation when the data only shows correlation.
+- Clearly state when required information is unavailable.
+- Separate verified facts from calculations and interpretations.
 
 Your responsibilities:
 
@@ -38,6 +46,8 @@ Analyze:
 - Measurable patterns
 - Growth or decline
 - Significant changes in business metrics
+
+Focus on the user's question and use only relevant business data.
 
 If information is missing, clearly state what is missing.
 

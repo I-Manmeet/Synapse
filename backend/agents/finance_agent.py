@@ -1,10 +1,9 @@
 from foundary_client import project_client
-from business_context import BUSINESS_CONTEXT
 
 AGENT_NAME = "finance-agent"
 
 
-def analyze(question: str, context: str = "") -> str:
+def analyze(question: str, context: str = "", business_id: str = "") -> str:
 
     openai = project_client.get_openai_client(
         agent_name=AGENT_NAME
@@ -16,20 +15,26 @@ You are the Finance Agent of Synapse.
 Business question:
 {question}
 
-COMMON BUSINESS CONTEXT:
-{BUSINESS_CONTEXT}
-
-Additional context:
+BUSINESS CONTEXT:
 {context}
 
 IMPORTANT:
-- Use the COMMON BUSINESS CONTEXT as the authoritative baseline.
+- The BUSINESS CONTEXT was prepared specifically for the
+  current business workspace.
+- Use the BUSINESS CONTEXT as the authoritative baseline.
+- Use only information provided in the BUSINESS CONTEXT.
+- Do not substitute another business's data.
 - Do not substitute another time period.
-- If additional context conflicts with the common context,
-  explicitly report the conflict.
+- If information conflicts, explicitly report the conflict.
 - Do not silently choose conflicting data.
 - Do not invent financial values.
-- If required information is missing, clearly state what is missing.
+- Do not invent revenue, expenses, profit, margins,
+  cash flow, or other financial metrics.
+- If required information is missing, clearly state
+  what is missing.
+- Distinguish verified figures from calculations
+  and interpretations.
+- Do not convert correlation into causation.
 
 Your responsibilities:
 

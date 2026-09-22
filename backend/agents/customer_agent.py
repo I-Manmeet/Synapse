@@ -1,15 +1,17 @@
 from rag import retrieve_context
 from foundary_client import project_client
-from business_context import BUSINESS_CONTEXT
 
 
 AGENT_NAME = "customer-agent"
 
 
-def analyze(question: str, context: str = "") -> str:
+def analyze(question: str, context: str = "", business_id: str = "") -> str:
 
-    # Retrieve relevant information from uploaded business documents
-    rag_context = retrieve_context(question)
+    # Retrieve relevant information from business documents
+    rag_context = retrieve_context(
+    question=question,
+    business_id=business_id
+)
 
     openai = project_client.get_openai_client(
         agent_name=AGENT_NAME
@@ -21,10 +23,7 @@ You are the Customer Agent of Synapse.
 Business question:
 {question}
 
-COMMON BUSINESS CONTEXT:
-{BUSINESS_CONTEXT}
-
-Additional context:
+BUSINESS CONTEXT:
 {context}
 
 RELEVANT BUSINESS DOCUMENTS:
@@ -45,16 +44,22 @@ Analyze:
 Use the retrieved documents as evidence.
 
 IMPORTANT:
-- Use the COMMON BUSINESS CONTEXT as the authoritative baseline.
+- The BUSINESS CONTEXT was prepared specifically for the
+  current business workspace.
+- Use the BUSINESS CONTEXT as the authoritative baseline.
+- Do not use data from another business.
 - Do not substitute another time period.
-- If additional context conflicts with the common context,
-  explicitly report the conflict.
+- If information conflicts, explicitly report the conflict.
 - Do not silently choose conflicting data.
-- Do not invent customer information, reviews, demographics, or statistics.
+- Do not invent customer information, reviews,
+  demographics, or statistics.
 - Do not treat assumptions as facts.
-- Clearly distinguish information supported by business documents from assumptions or general knowledge.
+- Clearly distinguish information supported by business
+  documents from assumptions or general knowledge.
 - Clearly identify missing information.
-- If the documents do not contain enough information, say so.
+- If the documents do not contain enough information,
+  say so.
+- Do not convert correlation into causation.
 
 Return a concise customer analysis for the Manager Agent.
 """

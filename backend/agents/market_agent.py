@@ -1,15 +1,17 @@
 from rag import retrieve_context
 from foundary_client import project_client
-from business_context import BUSINESS_CONTEXT
 
 
 AGENT_NAME = "market-agent"
 
 
-def analyze(question: str, context: str = "") -> str:
+def analyze(question: str, context: str = "", business_id: str = "") -> str:
 
-    # Retrieve relevant information from uploaded business documents
-    rag_context = retrieve_context(question)
+    # Retrieve relevant information from business documents
+    rag_context = retrieve_context(
+    question=question,
+    business_id=business_id
+)
 
     openai = project_client.get_openai_client(
         agent_name=AGENT_NAME
@@ -21,10 +23,7 @@ You are the Market Agent of Synapse.
 Business question:
 {question}
 
-COMMON BUSINESS CONTEXT:
-{BUSINESS_CONTEXT}
-
-Additional context:
+BUSINESS CONTEXT:
 {context}
 
 RELEVANT BUSINESS DOCUMENTS:
@@ -45,15 +44,21 @@ Analyze the business using:
 Use the retrieved documents when relevant.
 
 IMPORTANT:
-- Use the COMMON BUSINESS CONTEXT as the authoritative baseline.
+- The BUSINESS CONTEXT was prepared specifically for the
+  current business workspace.
+- Use the BUSINESS CONTEXT as the authoritative baseline.
+- Do not use data from another business.
 - Do not substitute another time period.
-- If additional context conflicts with the common context,
-  explicitly report the conflict.
+- If information conflicts, explicitly report the conflict.
 - Do not silently choose conflicting data.
-- Do not invent competitor information, statistics, or market data.
+- Do not invent competitor information, statistics,
+  or market data.
 - Use only information supported by the available data.
-- Clearly distinguish business-document evidence from general market information.
-- If the documents do not contain enough information, clearly state what is missing.
+- Clearly distinguish business-document evidence from
+  general market information.
+- Do not convert correlation into causation.
+- If the documents do not contain enough information,
+  clearly state what is missing.
 
 Return a concise market analysis for the Manager Agent.
 """

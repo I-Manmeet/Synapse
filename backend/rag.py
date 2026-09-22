@@ -3,20 +3,27 @@ from search_client import search_documents
 
 def retrieve_context(
     question: str,
+    business_id: str,
     top: int = 5
 ) -> str:
     """
-    Retrieve relevant business information
-    from Azure AI Search.
+    Retrieve relevant business information from Azure AI Search
+    for ONLY the specified business workspace.
     """
+
+    if not business_id:
+        raise ValueError(
+            "business_id is required for business-isolated search."
+        )
 
     documents = search_documents(
         query=question,
-        top=top
+        top=top,
+        business_id=business_id
     )
 
     if not documents:
-        return "No relevant information found."
+        return "No relevant information found for this business."
 
     context_parts = []
 
