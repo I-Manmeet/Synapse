@@ -37,6 +37,9 @@ def download_blob(filename: str) -> bytes:
 
     return blob_client.download_blob().readall()
 
+def extract_text_from_md(filename: str) -> str:
+    data = download_blob(filename)
+    return data.decode("utf-8")
 
 def extract_text_from_txt(filename: str) -> str:
 

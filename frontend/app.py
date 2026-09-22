@@ -21,8 +21,8 @@ st.divider()
 st.subheader("📁 Upload Business Document")
 
 uploaded_file = st.file_uploader(
-    "Upload PDF, DOCX, Excel, CSV or TXT",
-    type=["pdf", "docx", "xlsx", "xls", "csv", "txt"]
+    "Upload PDF, DOCX, Excel, CSV or TXT or Markdown",
+    type=["pdf", "docx", "xlsx", "xls", "csv", "txt","md"]
 )
 
 if uploaded_file is not None:
