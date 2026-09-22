@@ -1,7 +1,13 @@
 fastapi
 uvicorn[standard]
-python-dotenv
 python-multipart
-azure-ai-projects
-azure-identity
+python-dotenv
 openai
+azure-identity
+azure-ai-projects
+azure-storage-blob
+azure-search-documents
+pandas
+openpyxl
+pypdf
+python-docx

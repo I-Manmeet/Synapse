@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapse — Multi-Agent Business Intelligence</title>
+<style>
+  :root{
+    --bg:#FAF4EA;--bg-2:#F3EADB;--surface:#FFFFFF;--surface-2:#FFFDF9;
+    --ink:#2A211A;--ink-soft:#665A4E;--muted:#9E9082;
+    --line:#ECE2D2;--line-strong:#DDCEB7;
+    --brand:#CE5E2A;--brand2:#E8974A;--brand-soft:#FBEADC;--accent:#6F8F63;--accent2:#8AA878;--high:#BE473A;
+    --glow:0 14px 30px -14px rgba(206,94,42,.5);
+    --shadow:0 22px 46px -26px rgba(78,52,28,.4);
+    --shadow-lg:0 40px 84px -34px rgba(78,52,28,.42);
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;overflow-x:hidden;
+    padding:0 clamp(18px,5vw,64px) 72px;}
+  .wrap{max-width:1120px;margin:0 auto;position:relative;z-index:1;}
+  a{color:var(--brand);}
+  .orb{position:fixed;border-radius:50%;filter:blur(75px);z-index:0;pointer-events:none;opacity:.5;}
+  .orb1{width:540px;height:540px;background:radial-gradient(circle,rgba(232,151,74,.4),transparent 70%);top:-170px;left:-150px;animation:float1 17s ease-in-out infinite;}
+  .orb2{width:460px;height:460px;background:radial-gradient(circle,rgba(206,94,42,.3),transparent 70%);top:30px;right:-170px;animation:float2 20s ease-in-out infinite;}
+  @keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(46px,56px);}}
+  @keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-46px,46px);}}
+  nav.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;
+    padding:18px clamp(18px,5vw,64px);margin:0 calc(-1 * clamp(18px,5vw,64px));transition:.3s;}
+  nav.top.scrolled{background:rgba(250,244,234,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  nav.top .brand{font-family:var(--serif);font-size:32px;font-weight:700;letter-spacing:-.01em;}
+  nav.top .brand span{color:var(--brand);}
+  nav.top a.cta{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;text-decoration:none;
+    padding:10px 20px;border-radius:9px;font-size:13px;font-weight:700;transition:.2s;box-shadow:var(--glow);}
+  nav.top a.cta:hover{transform:translateY(-2px);}
+  .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;padding:48px 0 44px;}
+  .hero .kicker{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--brand);font-weight:700;}
+  .hero h1{font-family:var(--serif);font-size:clamp(46px,7vw,86px);line-height:.94;letter-spacing:-.025em;margin:14px 0 16px;font-weight:700;}
+  .hero h1 .grad{background:linear-gradient(120deg,var(--brand),var(--brand2) 70%,#f0b06a);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .hero .dek{font-family:var(--serif);font-style:italic;font-size:clamp(16px,2.2vw,21px);color:var(--ink-soft);max-width:600px;line-height:1.42;}
+  .hero .btns{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px;}
+  .btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;text-decoration:none;
+    padding:15px 28px;border-radius:10px;font-size:15px;font-weight:700;transition:.2s;box-shadow:var(--glow);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 20px 38px -14px rgba(206,94,42,.6);}
+  .btn-ghost{background:rgba(255,255,255,.6);border:1px solid var(--line-strong);color:var(--ink-soft);text-decoration:none;
+    padding:15px 24px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;font-family:var(--sans);}
+  .btn-ghost:hover{border-color:var(--brand);color:var(--brand);background:#fff;}
+  .meta-row{display:flex;flex-wrap:wrap;gap:12px 26px;margin-top:32px;font-size:12px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;}
+  .meta-row b{color:var(--ink);font-weight:700;}
+  .live{background:var(--surface);border:1px solid var(--line-strong);border-radius:18px;padding:22px;box-shadow:var(--shadow-lg);animation:bob 7s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .live .lh{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:16px;}
+  .live .pulse{width:9px;height:9px;border-radius:50%;background:var(--brand);animation:blink 1.5s infinite;}
+  @keyframes blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(206,94,42,.4);}50%{opacity:.5;box-shadow:0 0 0 7px rgba(206,94,42,0);}}
+  .live .node{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;border:1px solid var(--line);margin-bottom:8px;transition:.35s;background:var(--bg-2);}
+  .live .node .e{font-size:19px;}
+  .live .node .nm{font-weight:700;font-size:13.5px;}
+  .live .node .st{margin-left:auto;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .live .node.active{border-color:var(--brand);background:var(--brand-soft);box-shadow:var(--glow);transform:scale(1.02);}
+  .live .node.active .st{color:var(--brand);}
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}.orb,.live,.pulse{animation:none;}}
+  .sec-label{display:flex;align-items:center;gap:14px;margin:60px 0 20px;}
+  .sec-label span{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);font-weight:700;white-space:nowrap;}
+  .sec-label:after{content:"";height:1px;background:linear-gradient(90deg,var(--line-strong),transparent);flex:1;}
+  h2.big{font-family:var(--serif);font-size:clamp(27px,4vw,38px);letter-spacing:-.01em;margin-bottom:10px;}
+  p.lead{font-size:16px;color:var(--ink-soft);max-width:720px;line-height:1.62;}
+  p.lead i{color:var(--ink);}
+  .demo{background:var(--surface);border:1px solid var(--line-strong);border-radius:18px;padding:28px clamp(20px,4vw,38px) 34px;box-shadow:var(--shadow);}
+  .demo-head{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;}
+  .demo-head .q{font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);color:var(--ink);line-height:1.3;flex:1;min-width:260px;}
+  .demo-head .q b{color:var(--brand);font-style:italic;font-weight:400;}
+  .play{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border:none;border-radius:10px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;font-family:var(--sans);box-shadow:var(--glow);}
+  .play:hover:not(:disabled){transform:translateY(-2px);}
+  .play:disabled{opacity:.6;cursor:default;box-shadow:none;}
+  .demo-cap{font-size:12.5px;color:var(--brand);font-weight:700;letter-spacing:.06em;min-height:18px;margin:16px 0 18px;}
+  .steps{display:flex;flex-direction:column;gap:10px;}
+  .step{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg-2);
+    opacity:.32;transform:translateY(6px) scale(.99);transition:opacity .45s ease,transform .45s ease,border-color .45s ease,box-shadow .45s ease;}
+  .step.on{opacity:1;transform:none;border-color:var(--brand);box-shadow:var(--shadow);}
+  .step .e{font-size:22px;width:30px;text-align:center;flex-shrink:0;}
+  .step .who{font-weight:700;font-size:14px;}
+  .step .who small{display:block;font-weight:600;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .step .txt{font-size:14px;color:var(--ink-soft);line-height:1.45;margin-top:5px;}
+  .step .txt b{color:var(--ink);}
+  .step.mgr{background:var(--brand-soft);}
+  .step.final{border-left:5px solid var(--brand);background:linear-gradient(120deg,var(--brand-soft),var(--surface));}
+  .step.final .txt{color:var(--ink);font-size:14.5px;}
+  .badge-lvl{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:5px;margin-left:6px;color:var(--high);background:rgba(190,71,58,.12);}
+  .agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .agent{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 18px 17px;transition:.22s;position:relative;overflow:hidden;}
+  .agent:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));transform:scaleX(0);transform-origin:left;transition:.3s;}
+  .agent:hover{border-color:var(--brand);box-shadow:var(--shadow);transform:translateY(-4px);}
+  .agent:hover:before{transform:scaleX(1);}
+  .agent .e{font-size:25px;}
+  .agent .n{font-weight:700;font-size:15.5px;margin-top:8px;}
+  .agent .r{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .agent .d{font-size:13px;color:var(--ink-soft);margin-top:9px;line-height:1.45;}
+  .agent.mgr:before{transform:scaleX(1);}
+  .flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .fstep{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;transition:.2s;}
+  .fstep:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--line-strong);}
+  .fstep .num{font-family:var(--serif);font-size:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;}
+  .fstep .t{font-weight:700;font-size:14px;margin-top:4px;}
+  .fstep .s{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4;}
+  .stack{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{background:var(--surface);border:1px solid var(--line-strong);border-radius:22px;padding:9px 17px;font-size:13px;color:var(--ink-soft);transition:.2s;}
+  .chip:hover{border-color:var(--brand);color:var(--ink);}
+  .chip b{color:var(--ink);}
+  .final-cta{margin-top:60px;background:linear-gradient(135deg,#CE5E2A,#B84A22);color:#fff;border-radius:20px;
+    padding:48px clamp(24px,5vw,56px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;}
+  .final-cta:before{content:"";position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,140,.4),transparent 70%);top:-120px;right:-70px;}
+  .final-cta>*{position:relative;z-index:1;}
+  .final-cta h2{font-family:var(--serif);font-size:clamp(25px,3.5vw,34px);line-height:1.15;max-width:560px;}
+  .final-cta p{opacity:.92;font-size:14px;margin-top:8px;max-width:520px;}
+  .final-cta a{background:#fff;color:var(--brand);text-decoration:none;padding:16px 32px;border-radius:11px;font-weight:700;font-size:15px;white-space:nowrap;transition:.2s;}
+  .final-cta a:hover{transform:translateY(-2px);box-shadow:0 14px 28px -10px rgba(0,0,0,.3);}
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;}.live{max-width:420px;}}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="wrap">
+  <nav class="top" id="nav">
+    <div class="brand">Synapse<span>.</span></div>
+    <a class="cta" href="console.html">Launch Console →</a>
+  </nav>
+  <section class="hero">
+    <div>
+      <div class="kicker">Multi-Agent Business Intelligence &amp; Decision Support</div>
+      <h1>One assistant.<br>A <span class="grad">team of agents</span>.</h1>
+      <p class="dek">Ask a plain-language business question. Seven specialist AI agents diagnose it, weigh the risks, and hand you one evidence-based recommendation — while you make the final call.</p>
+      <div class="btns">
+        <a class="btn-primary" href="console.html">Launch the console →</a>
+        <button class="btn-ghost" onclick="document.getElementById('demo').scrollIntoView();setTimeout(playDemo,500);">▶ See how it works</button>
+      </div>
+      <div class="meta-row">
+        <div><b>7</b> agents</div><div><b>gpt-4.1-mini</b></div><div><b>Microsoft Foundry</b></div><div>Support, <b>not automation</b></div>
+      </div>
+    </div>
+    <div class="live" id="live">
+      <div class="lh"><span class="pulse"></span> Synapse · live pipeline</div>
+      <div id="liveNodes"></div>
+    </div>
+  </section>
+  <div class="sec-label reveal"><span>What Synapse is</span></div>
+  <h2 class="big reveal">A leadership team, made of AI agents.</h2>
+  <p class="lead reveal">Instead of one chatbot guessing at everything, Synapse has an analyst, a CFO, a market researcher, a customer analyst, a risk manager, and a strategist — coordinated by a manager. Business owners have data but still struggle with <i>"what should I actually do?"</i> Dashboards show numbers; a single chatbot answers in one shot. Synapse breaks the decision into its parts, diagnoses the cause, weighs the trade-offs, and recommends.</p>
+  <div class="sec-label reveal" id="demo"><span>How it actually works</span></div>
+  <div class="demo reveal">
+    <div class="demo-head">
+      <div class="q">A user asks: <b>"Our sales dropped 20%. Why, and what should we do?"</b></div>
+      <button class="play" id="playBtn" onclick="playDemo()">▶ Play demo</button>
+    </div>
+    <div class="demo-cap" id="demoCap">Press play to watch the agents work through it.</div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <p class="lead reveal" style="margin-top:16px;">The Manager only calls the agents a question actually needs — a simple "what was revenue last month?" uses Analytics alone; a complex decision triggers the full chain. That dynamic routing is what makes Synapse a real multi-agent system, not six separate tools.</p>
+  <div class="sec-label reveal"><span>The seven agents</span></div>
+  <div class="agents" id="agents"></div>
+  <div class="sec-label reveal"><span>How data flows</span></div>
+  <div class="flow" id="flow"></div>
+  <div class="sec-label reveal"><span>Built on</span></div>
+  <div class="stack reveal">
+    <div class="chip"><b>Microsoft Foundry</b> — agents &amp; orchestration</div>
+    <div class="chip"><b>gpt-4.1-mini</b> — one shared model</div>
+    <div class="chip"><b>Code Interpreter</b> — exact math</div>
+    <div class="chip"><b>RAG / File Search</b> — reads your docs</div>
+    <div class="chip"><b>Web Search</b> — market data</div>
+  </div>
+  <div class="final-cta reveal">
+    <div>
+      <h2>See it run on your own question.</h2>
+      <p>Upload your data, ask, and watch the agents diagnose and recommend in real time.</p>
+    </div>
+    <a href="console.html">Launch the console →</a>
+  </div>
+  <footer>Synapse — Multi-Agent Business Intelligence &amp; Decision Support. The demo above uses a sample scenario.</footer>
+</div>
+<script>
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const LIVE=[["🧠","Manager"],["📊","Analytics"],["💰","Finance"],["🔍","Market"],["👥","Customer"],["⚠️","Risk"],["🎯","Strategy"]];
+document.getElementById("liveNodes").innerHTML=LIVE.map((n,i)=>`<div class="node" data-i="${i}"><span class="e">${n[0]}</span><span class="nm">${n[1]}</span><span class="st">idle</span></div>`).join("");
+const liveNodes=[...document.querySelectorAll("#liveNodes .node")];
+let li=0;
+setInterval(()=>{liveNodes.forEach(n=>{n.classList.remove("active");n.querySelector(".st").textContent="idle";});const a=liveNodes[li];a.classList.add("active");a.querySelector(".st").textContent="working";li=(li+1)%liveNodes.length;},1300);
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");obs.unobserve(e.target);}}),{threshold:.12,rootMargin:"0px 0px -40px 0px"});
+document.querySelectorAll(".reveal").forEach(el=>obs.observe(el));
+const nav=document.getElementById("nav");
+addEventListener("scroll",()=>nav.classList.toggle("scrolled",scrollY>16));
+const STEPS=[
+  {e:"🧠",who:"Manager Agent",role:"Orchestrator",cls:"mgr",cap:"Manager routing the question…",txt:"Classifies this as a complex diagnosis + decision — calls the full chain of specialists."},
+  {e:"📊",who:"Analytics",role:"Data Analyst",cap:"Analytics reading the numbers…",txt:"Product A sales fell <b>33.3%</b> from August to September — the main driver of the overall drop."},
+  {e:"🔍",who:"Market Research",role:"External Research",cap:"Market scanning competitors…",txt:"Two competitors <b>reduced prices</b> and launched competing products."},
+  {e:"👥",who:"Customer Intelligence",role:"Customer Analyst",cap:"Customer reading reviews…",txt:"<b>Delivery delays</b> are the top complaint — in 42% of negative reviews."},
+  {e:"💰",who:"Finance",role:"CFO",cap:"Finance running the math…",txt:"A 20% discount on Product A cuts its margin from <b>30% to 12.5%</b> — unsustainable long term."},
+  {e:"⚠️",who:"Risk Assessment",role:"Risk Manager",cap:"Risk weighing what could go wrong…",txt:"Starting a price war is <b>HIGH financial risk</b><span class='badge-lvl'>HIGH</span> given already-declining margins."},
+  {e:"🎯",who:"Strategy",role:"Decision Support",cls:"final",cap:"Strategy forming the recommendation…",txt:"<b>Recommendation:</b> Don't cut prices. Fix delivery delays first, then test a limited 5–10% promotion, and monitor competitor pricing."},
+];
+document.getElementById("steps").innerHTML=STEPS.map((s,i)=>`<div class="step ${s.cls||''}" id="step${i}"><div class="e">${s.e}</div><div><div class="who">${s.who}<small>${s.role}</small></div><div class="txt">${s.txt}</div></div></div>`).join("");
+let playing=false;
+async function playDemo(){
+  if(playing) return; playing=true;
+  const btn=document.getElementById("playBtn"),cap=document.getElementById("demoCap");
+  btn.disabled=true;btn.textContent="▶ Playing…";
+  STEPS.forEach((_,i)=>document.getElementById("step"+i).classList.remove("on"));
+  for(let i=0;i<STEPS.length;i++){cap.textContent=STEPS[i].cap;document.getElementById("step"+i).classList.add("on");await wait(i===0?900:1150);}
+  cap.textContent="Done — one clear recommendation, backed by every agent.";
+  btn.disabled=false;btn.textContent="↺ Replay demo";playing=false;
+}
+const AGENTS=[
+  {e:"🧠",n:"Manager",r:"Orchestrator",mgr:1,d:"Reads the question, decides which specialists are needed and in what order, then routes the final answer back."},
+  {e:"📊",n:"Analytics",r:"Data Analyst",d:"Computes revenue, growth, margins, KPIs and per-product trends. Uses Code Interpreter for exact math."},
+  {e:"💰",n:"Finance",r:"CFO",d:"Assesses margins, ROI, break-even, cash flow and scenario outcomes of a price change or investment."},
+  {e:"🔍",n:"Market Research",r:"External Research",d:"Researches competitors, pricing and industry trends via web search and document retrieval."},
+  {e:"👥",n:"Customer Intelligence",r:"Customer Analyst",d:"Analyzes reviews and complaints (RAG) to surface sentiment, recurring issues and churn risk."},
+  {e:"⚠️",n:"Risk Assessment",r:"Risk Manager",d:"Evaluates financial, market, operational and customer risk for each option, and how to reduce it."},
+  {e:"🎯",n:"Strategy",r:"Decision Support",d:"Synthesizes every finding into one clear, prioritized recommendation. Decides — doesn't gather new data."},
+];
+document.getElementById("agents").innerHTML=AGENTS.map((a,i)=>`<div class="agent reveal ${a.mgr?'mgr':''}" style="transition-delay:${i*70}ms"><div class="e">${a.e}</div><div class="n">${a.n}</div><div class="r">${a.r}</div><div class="d">${a.d}</div></div>`).join("");
+const FLOW=[
+  ["1","Upload","User uploads business files — CSVs, reports, reviews."],
+  ["2","Store","Files saved in the Foundry project, attached to the agents that need them."],
+  ["3","Ask","User types a plain-language question."],
+  ["4","Route","Manager sends it to the relevant specialists."],
+  ["5","Analyze","Each agent reads its data and returns structured findings."],
+  ["6","Synthesize","Strategy merges everything into one recommendation."],
+];
+document.getElementById("flow").innerHTML=FLOW.map(([n,t,s],i)=>`<div class="fstep reveal" style="transition-delay:${i*60}ms"><div class="num">${n}</div><div class="t">${t}</div><div class="s">${s}</div></div>`).join("");
+document.querySelectorAll(".agent.reveal,.fstep.reveal").forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 import os
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from orchestrator import run_analysis
@@ -42,12 +43,20 @@ class AnalysisRequest(BaseModel):
 # Home route
 # -----------------------------------
 
+
+
+
+
+FRONT = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
 @app.get("/")
 def home():
-    return {
-        "message": "Synapse Multi-Agent Business Assistant is running!",
-        "status": "online"
-    }
+    return FileResponse(os.path.join(FRONT, "index.html"))
+
+@app.get("/{page}.html")
+def page(page: str):
+    return FileResponse(os.path.join(FRONT, f"{page}.html"))
+
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
