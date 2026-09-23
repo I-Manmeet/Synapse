@@ -1,10 +1,10 @@
 from foundary_client import project_client
-import json
+
 
 AGENT_NAME = "analytics-agent"
 
 
-def analyze(question: str, context: str = "",business_id: str = ""):
+def analyze(question: str, context: str = "",business_id: str = "") -> str:
 
     openai = project_client.get_openai_client(
         agent_name=AGENT_NAME
@@ -51,23 +51,11 @@ Focus on the user's question and use only relevant business data.
 
 If information is missing, clearly state what is missing.
 
-Return valid JSON only:
-
-{
-    "report": "concise analytical report",
-    "kpis": {
-        "revenue": null,
-        "customers": null
-    }
-}
-
-Use null when the information is not available.
-Never invent KPI values.
-Revenue and customers must come only from the supplied business data.
+Return a concise analytical report for the Manager Agent.
 """
 
     response = openai.responses.create(
         input=prompt
     )
 
-    return json.loads(response.output_text)
+    return response.output_text
