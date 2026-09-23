@@ -1,6 +1,5 @@
 from foundary_client import project_client
 from business_context import build_business_context
-import json
 
 
 AGENT_NAME = "finance-agent"
@@ -53,26 +52,14 @@ Analyze:
 
 Use only the available business data.
 
-Return valid JSON only:
-
-{
-    "report": "concise financial analysis",
-    "kpis": {
-        "expenses": null,
-        "profit": null
-    }
-}
-
-Use null when the information is not available.
-Never invent KPI values.
-Expenses and profit must come only from the supplied BUSINESS CONTEXT.
+Return a concise financial analysis for the Manager Agent.
 """
 
     response = openai.responses.create(
         input=prompt
     )
 
-    return json.loads(response.output_text)
+    return response.output_text
 
 
 def simulate(scenario: str, business_id: str = "") -> str:
