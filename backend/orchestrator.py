@@ -263,6 +263,20 @@ ADDITIONAL CONTEXT:
 
     print("✅ Manager Agent completed")
 
+        # -----------------------------------
+    # STEP 5: Extract KPIs
+    # -----------------------------------
+
+    analytics_kpis = findings.get("analytics", {}).get("kpis", {})
+    finance_kpis = findings.get("finance", {}).get("kpis", {})
+
+    kpis = {
+        "revenue": analytics_kpis.get("revenue"),
+        "customers": analytics_kpis.get("customers"),
+        "expenses": finance_kpis.get("expenses"),
+        "profit": finance_kpis.get("profit")
+    }
+
     # -----------------------------------
     # STEP 5: Final Result
     # -----------------------------------
@@ -273,5 +287,6 @@ ADDITIONAL CONTEXT:
         "findings": findings,
         "risk": risk,
         "strategy": strategy,
-        "final_report": final_report
+        "final_report": final_report,
+        "kpis": kpis
     }

@@ -205,7 +205,8 @@ def analyze_business(request: AnalysisRequest):
             "market": result["findings"].get("market"),
             "customer": result["findings"].get("customer"),
             "risk": result["risk"],
-            "strategy": result["strategy"]
+            "strategy": result["strategy"],
+            "kpis": result["kpis"]
         }
 
     except Exception as e:
