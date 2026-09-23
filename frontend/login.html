@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synapse — Login</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FAF4EA;color:#2A211A}
+    .card{width:100%;max-width:380px;background:#fff;border:1px solid #DDCEB7;border-radius:14px;padding:32px;box-shadow:0 22px 46px -26px rgba(78,52,28,.4)}
+    h1{font-size:22px;margin-bottom:4px;font-family:Georgia,serif}
+    p.sub{color:#9E9082;font-size:14px;margin-bottom:24px}
+    label{display:block;font-size:13px;margin:14px 0 6px;color:#665A4E;font-weight:700}
+    input{width:100%;padding:11px 13px;background:#FAF4EA;border:1px solid #DDCEB7;border-radius:8px;color:#2A211A;font-size:14px}
+    input:focus{outline:none;border-color:#CE5E2A}
+    button{width:100%;margin-top:22px;padding:12px;background:linear-gradient(135deg,#CE5E2A,#E8974A);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+    button:hover{opacity:.94}
+    .msg{margin-top:14px;font-size:13px;min-height:18px}
+    .msg.err{color:#BE473A}
+    .msg.ok{color:#6F8F63}
+    .foot{margin-top:20px;font-size:13px;color:#9E9082;text-align:center}
+    .foot a{color:#CE5E2A;text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Welcome back</h1>
+    <p class="sub">Log in to your Synapse workspace</p>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="you@company.com" />
+
+    <label for="password">Password</label>
+    <input id="password" type="password" placeholder="••••••••" />
+
+    <button id="loginBtn">Log in</button>
+    <div id="msg" class="msg"></div>
+
+    <p class="foot">No account? <a href="register.html">Register</a></p>
+  </div>
+
+  <script>
+    const msg = document.getElementById("msg");
+    document.getElementById("loginBtn").onclick = async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      if (!email || !password) { show("Enter email and password", "err"); return; }
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { show(data.detail || "Login failed", "err"); return; }
+        localStorage.setItem("synapse_token", data.access_token);
+        localStorage.setItem("synapse_name", data.name || "");
+        show("Success! Redirecting…", "ok");
+        setTimeout(() => location.href = "console.html", 600);
+      } catch (e) { show("Network error", "err"); }
+    };
+    function show(t, c){ msg.textContent = t; msg.className = "msg " + c; }
+  </script>
+</body>
+</html>

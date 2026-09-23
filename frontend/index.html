@@ -35,6 +35,12 @@
   nav.top a.cta{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;text-decoration:none;
     padding:10px 20px;border-radius:9px;font-size:13px;font-weight:700;transition:.2s;box-shadow:var(--glow);}
   nav.top a.cta:hover{transform:translateY(-2px);}
+  .nav-auth{display:flex;align-items:center;gap:14px;}
+  .nav-auth .nav-link{color:var(--ink-soft);text-decoration:none;font-size:13px;font-weight:700;}
+  .nav-auth .nav-link:hover{color:var(--brand);}
+  .nav-welcome{font-size:13px;color:var(--ink-soft);font-weight:700;}
+  .nav-logout{background:rgba(255,255,255,.6);border:1px solid var(--line-strong);color:var(--ink-soft);padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:.2s;}
+  .nav-logout:hover{border-color:var(--brand);color:var(--brand);}
   .hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;padding:48px 0 44px;}
   .hero .kicker{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--brand);font-weight:700;}
   .hero h1{font-family:var(--serif);font-size:clamp(46px,7vw,86px);line-height:.94;letter-spacing:-.025em;margin:14px 0 16px;font-weight:700;}
@@ -129,7 +135,7 @@
 <div class="wrap">
   <nav class="top" id="nav">
     <div class="brand">Synapse<span>.</span></div>
-    <a class="cta" href="console.html">Launch Console →</a>
+    <div class="nav-auth" id="navAuth"></div>
   </nav>
   <section class="hero">
     <div>
@@ -234,6 +240,28 @@ const FLOW=[
 ];
 document.getElementById("flow").innerHTML=FLOW.map(([n,t,s],i)=>`<div class="fstep reveal" style="transition-delay:${i*60}ms"><div class="num">${n}</div><div class="t">${t}</div><div class="s">${s}</div></div>`).join("");
 document.querySelectorAll(".agent.reveal,.fstep.reveal").forEach(el=>obs.observe(el));
+
+// -------- Auth state in the nav --------
+(function(){
+  const token = localStorage.getItem("synapse_token");
+  const name  = localStorage.getItem("synapse_name");
+  const el = document.getElementById("navAuth");
+  if(token){
+    el.innerHTML =
+      '<span class="nav-welcome">Welcome, ' + (name || "there") + '</span>' +
+      '<a class="cta" href="console.html">Launch Console →</a>' +
+      '<button class="nav-logout" id="logoutBtn">Log out</button>';
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("synapse_token");
+      localStorage.removeItem("synapse_name");
+      location.reload();
+    };
+  } else {
+    el.innerHTML =
+      '<a class="nav-link" href="login.html">Log in</a>' +
+      '<a class="cta" href="register.html">Register</a>';
+  }
+})();
 </script>
 </body>
 </html>

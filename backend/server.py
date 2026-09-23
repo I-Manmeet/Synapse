@@ -6,6 +6,11 @@ import uuid
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import json
+from datetime import datetime, timedelta
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from fastapi import Depends, Header
 
 from orchestrator import run_analysis
 from agents.finance_agent import simulate
@@ -65,6 +70,73 @@ async def create_business():
 
 
 # -----------------------------------
+# Auth setup (JWT)
+# -----------------------------------
+
+SECRET_KEY = os.getenv("JWT_SECRET", "change-this-secret-in-production")
+ALGORITHM = "HS256"
+TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
+
+
+def _load_users():
+    if not os.path.exists(USERS_FILE):
+        return {}
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=2)
+
+
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+
+@app.post("/register")
+def register(req: AuthRequest):
+    users = _load_users()
+    if req.email in users:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    users[req.email] = {"password": pwd_context.hash(req.password), "name": req.name}
+    _save_users(users)
+    return {"success": True, "message": "Account created"}
+
+
+@app.post("/login")
+def login(req: AuthRequest):
+    users = _load_users()
+    user = users.get(req.email)
+    if not user or not pwd_context.verify(req.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    expire = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRE_MINUTES)
+    token = jwt.encode({"sub": req.email, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    return {
+        "success": True,
+        "access_token": token,
+        "token_type": "bearer",
+        "name": user.get("name", "")
+    }
+
+
+def get_current_user(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload["sub"]
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+# -----------------------------------
 # Request model
 # -----------------------------------
 
@@ -104,20 +176,17 @@ def page(page: str):
 
 
 # -----------------------------------
-# Upload route
+# Upload route  (protected)
 # -----------------------------------
 
 @app.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    business_id: str = Form(...)
+    business_id: str = Form(...),
+    user: str = Depends(get_current_user)
 ):
 
     try:
-
-        # -----------------------------------
-        # Validate Business ID
-        # -----------------------------------
 
         if not business_id.startswith("biz_"):
             raise HTTPException(
@@ -125,36 +194,18 @@ async def upload_file(
                 detail="Invalid business_id"
             )
 
-        # -----------------------------------
-        # Read uploaded file
-        # -----------------------------------
-
         contents = await file.read()
-
-        # -----------------------------------
-        # Create business-specific blob path
-        # -----------------------------------
 
         blob_path = f"{business_id}/{file.filename}"
 
-        print(
-            f"📁 Uploading file to: {blob_path}"
-        )
+        print(f"📁 Uploading file to: {blob_path}")
 
-        # -----------------------------------
-        # Upload to Azure Blob Storage
-        # -----------------------------------
-
-        blob_client = container_client.get_blob_client(
-            blob_path
-        )
+        blob_client = container_client.get_blob_client(blob_path)
 
         blob_client.upload_blob(
             contents,
             overwrite=True,
-             metadata={
-        "business_id": business_id
-    }
+            metadata={"business_id": business_id}
         )
 
         return {
@@ -173,19 +224,18 @@ async def upload_file(
         raise
 
     except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # -----------------------------------
-# Analysis route
+# Analysis route  (protected)
 # -----------------------------------
 
 @app.post("/analyze")
-def analyze_business(request: AnalysisRequest):
+def analyze_business(
+    request: AnalysisRequest,
+    user: str = Depends(get_current_user)
+):
 
     try:
 
@@ -210,14 +260,18 @@ def analyze_business(request: AnalysisRequest):
         }
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+
+# -----------------------------------
+# Simulate route  (protected)
+# -----------------------------------
 
 @app.post("/simulate")
-def simulate_scenario(request: SimulationRequest):
+def simulate_scenario(
+    request: SimulationRequest,
+    user: str = Depends(get_current_user)
+):
     try:
         result = simulate(
             scenario=request.scenario,
@@ -230,7 +284,4 @@ def simulate_scenario(request: SimulationRequest):
             "result": result
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
